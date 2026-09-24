@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аудио-послание учителям</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            background-color: #f4f1ea;
+            color: #2c2520;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .card {
+            background: #ffffff;
+            padding: 40px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 450px;
+            width: 100%;
+            border: 2px solid #d4af37;
+        }
+        h1 {
+            font-size: 22px;
+            color: #8b0000;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #555;
+            margin-bottom: 25px;
+        }
+        .btn {
+            background-color: #8b0000;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(139, 0, 0, 0.2);
+        }
+        .btn.recording {
+            background-color: #d9534f;
+            animation: pulse 1.5s infinite;
+        }
+        .status {
+            margin-top: 20px;
+            font-style: italic;
+            color: #8b0000;
+            font-weight: bold;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>☦ Аудио-послание</h1>
+    <p>Назови своё имя, класс, имя любимого учителя и скажи ему тёплые слова благодарности от всей души!</p>
+    
+    <button id="record-btn" class="btn" onclick="toggleRecording()">Начать запись</button>
+    <div id="status-text" class="status"></div>
+</div>
+
+<script>
+    // НАСТРОЙКА ТОКЕНА И КАНАЛА (Заполните своими данными)
+    const TELEGRAM_TOKEN = '8956551626:AAHGAgq5PPtB4NFmpa92x3A2z_xCv9zDi7s'; 
+    const CHAT_ID = '@+7BWlfoF16BM5ZGUy'; // Например: '@my_channel_audio' или цифровой ID
+
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
+
+    async function toggleRecording() {
+        const btn = document.getElementById('record-btn');
+        const status = document.getElementById('status-text');
+
+        if (!isRecording) {
+            // Начало записи
+            audioChunks = [];
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/ogg' });
+                    status.innerText = "Отправка аудио в архив гимназии...";
+                    await sendToTelegram(audioBlob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                btn.innerText = "Остановить и отправить";
+                btn.classList.add('recording');
+                status.innerText = "🔴 Идёт запись... Говорите в микрофон";
+            } catch (err) {
+                status.innerText = "Ошибка: разрешите доступ к микрофону телефона.";
+            }
+        } else {
+            // Конец записи
+            mediaRecorder.stop();
+            isRecording = false;
+            btn.innerText = "Начать запись";
+            btn.classList.remove('recording');
+        }
+    }
+
+    async function sendToTelegram(blob) {
+        const status = document.getElementById('status-text');
+        const formData = new FormData();
+        formData.append('chat_id', CHAT_ID);
+        formData.append('voice', blob, 'audio.ogg');
+
+        try {
+            const response = await fetch(`https://telegram.org{TELEGRAM_TOKEN}/sendVoice`, {
+                method: 'POST',
+                body: formData
+            });
+            if (response.ok) {
+                status.innerText = "✨ Спасибо! Ваше послание успешно отправлено!";
+            } else {
+                status.innerText = "Ошибка отправки. Попробуйте ещё раз.";
+            }
+        } catch (error) {
+            status.innerText = "Ошибка сети. Проверьте интернет.";
+        }
+    }
+</script>
+
+</body>
+</html>
