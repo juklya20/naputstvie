@@ -82,7 +82,8 @@
 
 <script>
     const TELEGRAM_TOKEN = '8956551626:AAHGAgq5PPtB4NFmpa92x3A2z_xCv9zDi7s'; 
-    const CHAT_ID = '-1002319087532'; 
+    // Указали простое и точное текстовое имя публичного канала
+    const CHAT_ID = '@gimn_audio_2026'; 
 
     let mediaRecorder;
     let audioChunks = [];
@@ -131,19 +132,16 @@
         formData.append('voice', blob, 'audio.ogg');
 
         try {
-            // Используем открытый шлюз вместо прямого запроса, чтобы обойти блокировку CORS браузера
             const response = await fetch(`https://telegram.org{TELEGRAM_TOKEN}/sendVoice`, {
                 method: 'POST',
-                body: formData,
-                mode: 'cors' // Принудительно включаем режим обхода блокировок
+                body: formData
             });
             if (response.ok) {
                 status.innerText = "✨ Спасибо! Ваше послание успешно отправлено!";
             } else {
-                status.innerText = "Ошибка Telegram. Проверьте, добавлен ли бот в админы канала.";
+                status.innerText = "Ошибка Telegram. Проверьте имя канала в коде.";
             }
         } catch (error) {
-            // Если школьный интернет заблокировал домен телеграма полностью, используем резервный шлюз
             try {
                 const backupResponse = await fetch(`https://corsproxy.io?` + encodeURIComponent(`https://telegram.org{TELEGRAM_TOKEN}/sendVoice`), {
                     method: 'POST',
@@ -152,10 +150,10 @@
                 if (backupResponse.ok) {
                     status.innerText = "✨ Спасибо! Ваше послание успешно отправлено!";
                 } else {
-                    status.innerText = "Ошибка отправки через резервный шлюз.";
+                    status.innerText = "Убедитесь, что бот назначен АДМИНИСТРАТОРОМ канала.";
                 }
             } catch (e) {
-                status.innerText = "Блокировка сети. Пожалуйста, отключите школьный Wi-Fi и включите мобильный интернет.";
+                status.innerText = "Пожалуйста, отключите школьный Wi-Fi и включите мобильный интернет.";
             }
         }
     }
@@ -163,3 +161,4 @@
 
 </body>
 </html>
+
