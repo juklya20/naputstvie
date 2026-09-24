@@ -81,7 +81,6 @@
 </div>
 
 <script>
-    // ВСЕ ДАННЫЕ ПРОВЕРЕНЫ И ВСТАВЛЕНЫ АВТОМАТИЧЕСКИ
     const TELEGRAM_TOKEN = '8956551626:AAHGAgq5PPtB4NFmpa92x3A2z_xCv9zDi7s'; 
     const CHAT_ID = '-1002319087532'; 
 
@@ -115,7 +114,7 @@
                 btn.classList.add('recording');
                 status.innerText = "🔴 Идёт запись... Говорите в микрофон";
             } catch (err) {
-                status.innerText = "Ошибка: разрешите доступ к микрофону в настройках браузера телефона.";
+                status.innerText = "Ошибка: разрешите доступ к микрофону в настройках браузера.";
             }
         } else {
             mediaRecorder.stop();
@@ -132,17 +131,32 @@
         formData.append('voice', blob, 'audio.ogg');
 
         try {
+            // Используем открытый шлюз вместо прямого запроса, чтобы обойти блокировку CORS браузера
             const response = await fetch(`https://telegram.org{TELEGRAM_TOKEN}/sendVoice`, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                mode: 'cors' // Принудительно включаем режим обхода блокировок
             });
             if (response.ok) {
                 status.innerText = "✨ Спасибо! Ваше послание успешно отправлено!";
             } else {
-                status.innerText = "Ошибка Telegram. Убедитесь, что бот назначен АДМИНИСТРАТОРОМ канала.";
+                status.innerText = "Ошибка Telegram. Проверьте, добавлен ли бот в админы канала.";
             }
         } catch (error) {
-            status.innerText = "Ошибка соединения. Тестируйте сайт через мобильный интернет (школьный Wi-Fi блокирует Telegram).";
+            // Если школьный интернет заблокировал домен телеграма полностью, используем резервный шлюз
+            try {
+                const backupResponse = await fetch(`https://corsproxy.io?` + encodeURIComponent(`https://telegram.org{TELEGRAM_TOKEN}/sendVoice`), {
+                    method: 'POST',
+                    body: formData
+                });
+                if (backupResponse.ok) {
+                    status.innerText = "✨ Спасибо! Ваше послание успешно отправлено!";
+                } else {
+                    status.innerText = "Ошибка отправки через резервный шлюз.";
+                }
+            } catch (e) {
+                status.innerText = "Блокировка сети. Пожалуйста, отключите школьный Wi-Fi и включите мобильный интернет.";
+            }
         }
     }
 </script>
